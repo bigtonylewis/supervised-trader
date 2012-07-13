@@ -45,7 +45,8 @@ class KInputService(BaseResource):
     def _save_candle(self, cursor, candle):
         tbl = "kchart_%s_%sm" % (candle['symbol'].lower(), candle['period'])
         sql = "INSERT INTO %s(ts, open, close, high, low) " % tbl
-        sql += "VALUES(to_timestamp(%(time)s), %(open)s, %(close)s, %(high)s, %(low)s);"
+        sql += """VALUES('1970-01-01 00:00:00'::timestamp + %(time)s::interval,
+%(open)s, %(close)s, %(high)s, %(low)s);"""
 
         yield cursor.execute(sql, candle)
         defer.returnValue(dict(success=True, affected=cursor.rowcount))
