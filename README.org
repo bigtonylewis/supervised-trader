@@ -2,7 +2,7 @@
 #+DATE: 2012年07月13日 星期五 21时44分51秒
 #+AUTHOR: Jianing Yang <jianingy.yang AT gmail DOT com>
 
-* Prerequistes
+* Prerequisites
 
 - Python >= 2.7 and <= 3.0
 - Python Twisted >= 11.0
