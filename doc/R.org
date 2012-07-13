@@ -1,0 +1,9 @@
+#+TITLE: R 相关资料
+#+DATE: 2012年07月13日 星期五 22时11分50秒
+#+AUTHOR: Jianing Yang <jianingy.yang AT gmail DOT com>
+
+
+* 网摘
+
+** How To Backtest Strategy in R
+http://blog.fosstrading.com/2011/03/how-to-backtest-strategy-in-r.html
