@@ -1,0 +1,58 @@
+#+TITLE: README
+#+DATE: 2012年07月13日 星期五 21时44分51秒
+#+AUTHOR: Jianing Yang <jianingy.yang AT gmail DOT com>
+
+* Prerequistes
+
+- Python >= 2.7 and <= 3.0
+- Python Twisted >= 11.0
+- Python ujson
+- Python txpostgres >= 1.0.0
+- MetaTrader 4.0
+
+* Services
+
+** KINPUT
+
+=service/kinput.py=
+
+KINPUT is a program that receive candle data from its HTTP interface
+and save it into a postgreSQL database.
+
+*** Usage
+
+#+BEGIN_EXAMPLE
+twistd -n web --class=kinput.KInputService
+#+END_EXAMPLE
+
+
+* MetaTrader Plugins
+
+** HTTP_POST
+
+=plugins/indicators/http_post.mq4=
+
+HTTP_POST is a seudo-indicator that send candle data to KINPUT HTTP
+interface using gunzip's [[http://codebase.mql4.com/7353][Native HTTP Client for MQL]].
+
+
+** gHTTP
+
+=plugins/lib/ghttp.mqh=
+
+gunzip's [[http://codebase.mql4.com/7353][Native HTTP Client for MQL]] that enables MetaTrader sending
+data via HTTP.
+
+
+* SQLs
+
+** kchart.sql
+
+Tables used to store candle data. Those tables share a naming
+convention that is,
+
+#+BEGIN_EXAMPLE
+kchart_{symbol}_{peroid}m
+#+END_EXAMPLE
+
+For example, EURUSD 5m table is /kchart_eurusd_5m/.
