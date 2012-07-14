@@ -47,16 +47,17 @@ int start()
 //----
    // if (counted_bars < 0) return(-1);
    if (Time[pos] == last_update) return (0);
+   IndicatorDigits(Digits);
    
    // convert broker timestamp to GMT timestamp
    int gmt_time = Time[pos] - 3600 * StrToInteger(broker_timezone);
    query = StringConcatenate("time=", gmt_time,
                              "&period=", Period(),
                              "&symbol=", Symbol(),
-                             "&open=", Open[pos],
-                             "&close=", Close[pos],
-                             "&high=", High[pos],
-                             "&low=", Low[pos],
+                             "&open=", DoubleToStr(Open[pos], Digits),
+                             "&close=", DoubleToStr(Close[pos], Digits),
+                             "&high=", DoubleToStr(High[pos], Digits),
+                             "&low=", DoubleToStr(Low[pos], Digits),
                              "&volume=", Volume[pos]);
    
    http_url = StringConcatenate(api, "?", query);
