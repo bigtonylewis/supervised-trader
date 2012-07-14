@@ -1,0 +1,4 @@
+twisted>=12.0.0
+ujson
+txpostgres>=1.0.0
+matplotlib
