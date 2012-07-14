@@ -20,3 +20,90 @@ require(quantmod)
 # pull SPX data from Yahoo (getSymbols returns an xts object)
 getSymbols("^GSPC")
 #+END_SRC
+
+** Using PostgreSQL with Quantmod
+
+https://www.stat.math.ethz.ch/pipermail/r-help/2012-May/313520.html
+
+#+BEGIN_EXAMPLE
+[R] Quantmod, Xts, TTR and Postgresql
+
+Joshua Ulrich josh.m.ulrich at gmail.com
+Tue May 22 12:26:20 CEST 2012
+Previous message: [R] Quantmod, Xts, TTR and Postgresql
+Next message: [R] Quantmod, Xts, TTR and Postgresql
+Messages sorted by: [ date ] [ thread ] [ subject ] [ author ]
+On Tue, May 22, 2012 at 2:15 AM, R-type Studios <rtypestudios at gmail.com> wrote:
+> Hi Everyone,
+>
+> I'm currently using the latest build of R and R-Studio server (both are
+> amazing products)
+>
+> I'm still very new to this but I came across this issue:
+>
+> I'm trying to do a select from postgres and put the data into and xts
+> object like so:
+>
+> # Libs
+> library('RPostgreSQL') # http://code.google.com/p/rpostgresql/
+> library('quantmod')
+> library('TTR')
+> library('xts') #
+> http://cran.r-project.org/web/packages/xts/vignettes/xts.pdf
+>
+> # Connect and get data
+> drv <- dbDriver('PostgreSQL')
+> db <- dbConnect(drv, host='localhost', user='postgres', dbname='technica',
+> password='password')
+> fr <- dbGetQuery(db, 'SELECT date as "Date", open as "Open", high as
+> "High", low as "Low", close as "Close", volume as "Volume", random() as
+> "Adjusted" FROM stocks s INNER JOIN historical_prices hp ON s.id =
+> hp.stock_id WHERE s.symbol = \'SDL\' ORDER BY date DESC limit 50')
+>
+> # copied from the mysql code in the quantmod source
+> fr <- data.frame(fr[,-1],row.names=fr[,1])
+> fr <- xts(as.matrix(fr[,-1]), order.by=as.Date(fr[,1],
+> origin='1970-01-01'), src='technica', updated=Sys.time())
+> colnames(fr) <- paste('SDL',
+> c('Open','High','Low','Close','Volume','Adjusted'), sep='.')
+>
+> dvi <- DVI(Cl(fr))
+> print(dvi)
+>
+> When the code is executed I receive the error for the line dvi <-
+> DVI(Cl(fr)): "Error in runSum(x, n) : Invalid 'n'"
+>
+The defaults for DVI's magnitude and stretch arguments require there
+be at least 100 observations.  My guess is that your 'fr' object
+doesn't have the required 100 observations.  If it doesn't, then using
+the default value of n = 252 may also be an issue (giving misleading
+results, if not an error).
+
+> But if I do this (fetch the data from yahoo):
+>
+> getSymbols("SDL.AX")
+> dvi <- DVI(Cl(SDL.AX))
+> print(dvi)
+>
+> All seems to work fine, but I cant see any difference when I print the two
+> data sets out, except the data set size.
+>
+> Any ideas what I'm doing wrong? Id really like to be able to import from my
+> postgres database.
+>
+> Also i would be happy to write a postgres routine and submit it to quantmod
+> if i get this working
+>
+> Thanks!
+> Max
+>
+
+Best,
+--
+Joshua Ulrich  |  FOSS Trading: www.fosstrading.com
+
+Previous message: [R] Quantmod, Xts, TTR and Postgresql
+Next message: [R] Quantmod, Xts, TTR and Postgresql
+Messages sorted by: [ date ] [ thread ] [ subject ] [ author ]
+More information about the R-help mailing list
+#+END_EXAMPLE

@@ -30,8 +30,6 @@ class BaseResource(Resource):
 
     def finalize(self, value, request):
 
-        request.setHeader('Content-Type', 'application/json; charset=UTF-8')
-
         if isinstance(value, Failure):
             request.setResponseCode(500)
             response = dict(success=False,
@@ -46,6 +44,8 @@ class BaseResource(Resource):
         elif isinstance(response, unicode):
             request.write(response.decode('UTF-8'))
         else:
+            request.setHeader('Content-Type',
+                              'application/json; charset=UTF-8')
             request.write(json_encode(response))
 
         request.finish()

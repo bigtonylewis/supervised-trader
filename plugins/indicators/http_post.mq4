@@ -9,6 +9,8 @@
 #property indicator_chart_window
 //--- input parameters
 extern string    api = "http://192.168.155.1:8080/";
+extern string broker_timezone = "+2";
+
 //+------------------------------------------------------------------+
 //| Custom indicator initialization function                         |
 //+------------------------------------------------------------------+
@@ -46,34 +48,16 @@ int start()
    // if (counted_bars < 0) return(-1);
    if (Time[pos] == last_update) return (0);
    
-   /* Adjust timestamp
-    *
-    * Due to 'Time' returns a timestamp of broker's timezone, we have to
-    * adjust it to local timezone. Let's see an example for why,
-    * Consider you have a timestamp 3600 * 8 of GMT+2, if you directly apply
-    * it on a GMT+0 zone, you will get a 1970-01-01 08:00:00 GMT. However, the
-    * original time was 1970-01-01 10:00:00 GMT.
-    *
-    * To fix it, if the timestamp is s and local and broker timezone are tz1
-    * and tz2. We first calculate a GMT timestamp by s - 3600 * tz1. Then we
-    * calculate our local timestamp by add 3600 * tz2 to the GMT timestamp
-    * which will be
-    *
-    * s - 3600 * tz1 + 3600 * tz2 = s - 3600 * (tz1 - tz2)
-    *
-    * Since there is no interface in MQ4 for getting timezone of either broker
-    * or local, we can not get tz1 or tz2 directly. However, we could use API
-    * TimeCurrent and TimeLocal to find the difference between tz1 and tz2.
-    *
-    */
-   int time = Time[pos] - 3600 * (TimeHour(TimeCurrent()) - TimeHour(TimeLocal()));
-   query = StringConcatenate("time=", time,
+   // convert broker timestamp to GMT timestamp
+   int gmt_time = Time[pos] - 3600 * StrToInteger(broker_timezone);
+   query = StringConcatenate("time=", gmt_time,
                              "&period=", Period(),
                              "&symbol=", Symbol(),
                              "&open=", Open[pos],
                              "&close=", Close[pos],
                              "&high=", High[pos],
-                             "&low=", Low[pos]);
+                             "&low=", Low[pos],
+                             "&volume=", Volume[pos]);
    
    http_url = StringConcatenate(api, "?", query);
    Print(http_url);

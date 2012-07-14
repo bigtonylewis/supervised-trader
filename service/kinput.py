@@ -43,9 +43,10 @@ class KInputService(BaseResource):
 
     @defer.inlineCallbacks
     def _save(self, cursor, candle):
+
         tbl = "kchart_%s_%sm" % (candle['symbol'].lower(), candle['period'])
         sql = "INSERT INTO %s(ts, open, close, high, low, volume) " % tbl
-        sql += """VALUES('1970-01-01 00:00:00'::timestamp + %(time)s::interval,
+        sql += """VALUES(to_timestamp(%(time)s),
 %(open)s, %(close)s, %(high)s, %(low)s, %(volume)s);"""
 
         yield cursor.execute(sql, candle)
