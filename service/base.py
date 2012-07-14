@@ -34,13 +34,20 @@ class BaseResource(Resource):
 
         if isinstance(value, Failure):
             request.setResponseCode(500)
-            response = dict(message=str(value),
+            response = dict(success=False,
+                            reason=value.getErrorMessage(),
                             traceback=value.getTraceback())
         else:
             response = value
             request.setResponseCode(200)
 
-        request.write(json_encode(response))
+        if isinstance(response, str):
+            request.write(response)
+        elif isinstance(response, unicode):
+            request.write(response.decode('UTF-8'))
+        else:
+            request.write(json_encode(response))
+
         request.finish()
 
     def render_GET(self, request):

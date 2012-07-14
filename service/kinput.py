@@ -42,11 +42,11 @@ class KInputService(BaseResource):
             self._database_connected = True
 
     @defer.inlineCallbacks
-    def _save_candle(self, cursor, candle):
+    def _save(self, cursor, candle):
         tbl = "kchart_%s_%sm" % (candle['symbol'].lower(), candle['period'])
-        sql = "INSERT INTO %s(ts, open, close, high, low) " % tbl
+        sql = "INSERT INTO %s(ts, open, close, high, low, volume) " % tbl
         sql += """VALUES('1970-01-01 00:00:00'::timestamp + %(time)s::interval,
-%(open)s, %(close)s, %(high)s, %(low)s);"""
+%(open)s, %(close)s, %(high)s, %(low)s, %(volume)s);"""
 
         yield cursor.execute(sql, candle)
         defer.returnValue(dict(success=True, affected=cursor.rowcount))
@@ -54,15 +54,18 @@ class KInputService(BaseResource):
     @defer.inlineCallbacks
     def async_GET(self, request):
 
-        names = ('symbol', 'period', 'time', 'open', 'close', 'high', 'low')
+        names = ('symbol', 'period', 'time',
+                 'open', 'close', 'high', 'low', 'volume')
         candle = dict()
         for name in names:
             candle[name] = request.args.get(name, [None])[0]
             if not candle[name]:
                 raise InvalidCandleData('%s is empty' % name)
         try:
-            result = yield self.db.runInteraction(self._save_candle, candle)
+            result = yield self.db.runInteraction(self._save, candle)
             defer.returnValue(result)
         except psycopg2.IntegrityError:
             log.msg("duplicate candle found %s" % candle,
                     level=logging.WARNING)
+            defer.returnValue(dict(success=True,
+                                   affected=0, reason="duplicate"))
