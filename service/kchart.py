@@ -10,17 +10,26 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 from twisted.internet import reactor, defer
 from twisted.internet.threads import deferToThread
 from twisted.python import log
+from matplotlib.dates import date2num
+from datetime import datetime
 from txpostgres import txpostgres
-from base import BaseResource
-import matplotlib.pyplot as plt
-from cStringIO import StringIO
-import time
+from service.base import BaseResource
+from chart import create_chart, output_chart, candlestick
+from chart.trend import moving_average
+
 import re
+import time
 import logging
 
-TIME_RE = re.compile('(?P<oper>[-+])?(?P<amount>\d+)(?P<unit>[smhdw])|(?P<now>now)')
+
+TIME_RE = re.compile(
+    '(?P<oper>[-+])?(?P<amount>\d+)(?P<unit>[smhdw])|(?P<now>now)')
 DSN = 'host=localhost port=5432 user=jianingy dbname=jianingy'
 TIME_UNIT = dict(s=1, m=60, h=3600, d=86400, w=86400 * 7)
+
+
+class InvalidChartData(Exception):
+    pass
 
 
 def to_timestamp(matched):
@@ -32,38 +41,6 @@ def to_timestamp(matched):
         return time.time() - ts
     else:
         return time.time() + ts
-
-
-def candlestick(ax, quotes, width=0.6, colorup='#00ff00', colordown='#ff0000'):
-    stick_width = 0.05
-    i = 0
-    for quote in quotes:
-        highest, lowest = None, None
-        i = i + 1
-        ts, opening, closing, high, low = quote[:5]
-        if closing < opening:
-            height = opening - closing
-            bottom = closing
-            color = colordown
-        else:
-            height = closing - opening
-            bottom = opening
-            color = colorup
-
-        ax.bar(i + (width - stick_width) / 2,
-               high - low, stick_width, low,
-               color='#555555', linewidth=0, aa=False)
-
-        ax.bar(i, height, width, bottom,
-               color=color, edgecolor='#555555', aa=False)
-
-        if not highest or highest < high:
-            highest = high
-
-        if not lowest or lowest > low:
-            lowest = low
-
-        ax.set_ylim(highest, lowest)
 
 
 class KChartService(BaseResource):
@@ -89,24 +66,23 @@ class KChartService(BaseResource):
     @defer.inlineCallbacks
     def _fetch(self, cursor, option):
         tbl = "kchart_%s_%sm" % (option['symbol'].lower(), option['period'])
-        sql = "SELECT extract(EPOCH FROM ts), open, close, high, low FROM %s " % tbl
+        sql = "SELECT extract(EPOCH FROM ts), open, close, high, low "
+        sql += "FROM %s " % tbl
         sql += "WHERE ts >= to_timestamp(%(start)s) "
-        sql += "AND ts <= to_timestamp(%(end)s)"
+        sql += "AND ts <= to_timestamp(%(end)s) ORDER BY ts"
         iterator = yield cursor.execute(sql, option)
-        quotes = list(iterator.fetchall())
-        defer.returnValue(quotes)
 
-    def _draw(self, quotes):
-        fig = plt.figure(figsize=(10, 5))
-        ax = fig.add_axes([0.1, 0.2, 0.85, 0.7])
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('right')
-        ax.tick_params(axis='both', direction='out', width=1, length=10,
-                       labelsize=9, pad=8)
-        candlestick(ax, quotes)
-        output = StringIO()
-        plt.savefig(output, format='png')
-        return output.getvalue()
+        # convert unix timestamp to ordinal timestamp
+        ticks = map(lambda x: (date2num(datetime.fromtimestamp(x[0])),
+                               x[1], x[2], x[3], x[4]), iterator.fetchall())
+
+        defer.returnValue(ticks)
+
+    def _draw(self, ticks):
+        chart = create_chart(12.8, 4.8)
+        candlestick(chart, ticks)
+        moving_average(chart, ticks, n=5, color='blue')
+        return output_chart(chart)
 
     @defer.inlineCallbacks
     def async_GET(self, request):
@@ -129,7 +105,7 @@ class KChartService(BaseResource):
         else:
             option['end'] = to_timestamp(matched)
 
-        quotes = yield self.db.runInteraction(self._fetch, option)
-        result = yield deferToThread(self._draw, quotes)
+        ticks = yield self.db.runInteraction(self._fetch, option)
+        result = yield deferToThread(self._draw, ticks)
         request.setHeader('Content-Type', 'image/png')
         defer.returnValue(result)

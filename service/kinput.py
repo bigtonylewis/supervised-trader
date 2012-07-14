@@ -10,7 +10,7 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 from twisted.internet import reactor, defer
 from twisted.python import log
 from txpostgres import txpostgres
-from base import BaseResource
+from service.base import BaseResource
 import psycopg2
 import logging
 
