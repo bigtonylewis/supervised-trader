@@ -10,9 +10,9 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 from indicators.trend import moving_average as _moving_average
 
 
-def moving_average(chart, ticks, n=5, color='blue', width=1):
+def moving_average(chart, ticks, n=5, color='blue', width=1, type='simple'):
     fig, ax = chart[:2]
-    ma = _moving_average(map(lambda x: x[2], ticks), n)
+    ma = _moving_average(map(lambda x: x[2], ticks), n, type=type)
     linema20, = ax.plot(map(lambda x: x[0], ticks),
-                        ma, color='blue',
+                        ma, color=color,
                         lw=width, label='MA (%d)' % n)

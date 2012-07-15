@@ -66,7 +66,7 @@ def candlestick(chart, quotes, colorup='#00ff00', colordown='#ff0000'):
     start = quotes[0][0]
     end = quotes[-1][0]
 
-    width = (end - start) / len(quotes) * 0.7
+    width = (end - start) / len(quotes) * 0.6
 
     start = ((start) / 300) * 300
     end = ((end) / 300) * 300
@@ -93,7 +93,7 @@ def candlestick(chart, quotes, colorup='#00ff00', colordown='#ff0000'):
             xdata=(ts, ts), ydata=(low, high),
             color='k',
             linewidth=stick_width,
-            antialiased=False,
+            antialiased=True,
             zorder=5,
         )
 
@@ -102,9 +102,10 @@ def candlestick(chart, quotes, colorup='#00ff00', colordown='#ff0000'):
             width=width,
             height=height,
             facecolor=color,
-            edgecolor='k',
+            edgecolor='#666666',
+            lw=1,
             zorder=10,
-            antialiased=False,
+            antialiased=True,
         )
         ax.add_line(stick)
         ax.add_patch(candle)

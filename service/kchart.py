@@ -23,7 +23,9 @@ import logging
 
 
 TIME_RE = re.compile(
-    '(?P<oper>[-+])?(?P<amount>\d+)(?P<unit>[smhdw])|(?P<now>now)')
+    '(?P<oper>[-+])?(?P<amount>\d+)(?P<unit>[smhdw])'
+    '|(?P<datetime>\d+-\d+-\d+ \d+:\d+:\d+)'
+    '|(?P<now>now)')
 DSN = 'host=localhost port=5432 user=jianingy dbname=jianingy'
 TIME_UNIT = dict(s=1, m=60, h=3600, d=86400, w=86400 * 7)
 
@@ -81,7 +83,13 @@ class KChartService(BaseResource):
     def _draw(self, ticks):
         chart = create_chart(12.8, 4.8)
         candlestick(chart, ticks)
-        moving_average(chart, ticks, n=5, color='blue')
+        args = dict(color='grey', type='ema', width=0.5)
+        moving_average(chart, ticks, n=5, **args)
+        moving_average(chart, ticks, n=8, **args)
+        moving_average(chart, ticks, n=13, **args)
+        moving_average(chart, ticks, n=21, **args)
+        moving_average(chart, ticks, n=34, **args)
+        moving_average(chart, ticks, n=55, **args)
         return output_chart(chart)
 
     @defer.inlineCallbacks
