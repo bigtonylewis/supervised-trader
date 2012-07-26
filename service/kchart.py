@@ -15,7 +15,6 @@ from datetime import datetime
 from txpostgres import txpostgres
 from service.base import BaseResource
 from chart import create_chart, output_chart, candlestick
-from chart.trend import moving_average
 
 import re
 import time
@@ -26,7 +25,7 @@ TIME_RE = re.compile(
     '(?P<oper>[-+])?(?P<amount>\d+)(?P<unit>[smhdw])'
     '|(?P<datetime>\d+-\d+-\d+ \d+:\d+:\d+)'
     '|(?P<now>now)')
-DSN = 'host=localhost port=5432 user=jianingy dbname=jianingy'
+DSN = 'host=guru.corp.linuxnote.net port=5432 user=jianingy dbname=forex password=zzzz'
 TIME_UNIT = dict(s=1, m=60, h=3600, d=86400, w=86400 * 7)
 
 
@@ -34,15 +33,18 @@ class InvalidChartData(Exception):
     pass
 
 
-def to_timestamp(matched):
+def to_timestamp(matched, base=time.time()):
     c = matched.groupdict()
     if c['now'] == 'now':
         return time.time()
+    if c['datetime']:
+        return time.mktime(time.strptime(c['datetime'],
+                                         '%Y-%m-%d %H:%M:%S'))
     ts = float(c['amount']) * TIME_UNIT[c['unit']]
     if c['oper'] == '-':
-        return time.time() - ts
+        return base - ts
     else:
-        return time.time() + ts
+        return base + ts
 
 
 class KChartService(BaseResource):
@@ -80,17 +82,29 @@ class KChartService(BaseResource):
 
         defer.returnValue(ticks)
 
-    def _draw(self, ticks):
-        chart = create_chart(12.8, 4.8)
-        candlestick(chart, ticks)
-        args = dict(color='grey', type='ema', width=0.5)
-        moving_average(chart, ticks, n=5, **args)
-        moving_average(chart, ticks, n=8, **args)
-        moving_average(chart, ticks, n=13, **args)
-        moving_average(chart, ticks, n=21, **args)
-        moving_average(chart, ticks, n=34, **args)
-        moving_average(chart, ticks, n=55, **args)
-        return output_chart(chart)
+    @defer.inlineCallbacks
+    def _draw(self, option):
+
+        # get more data
+        n_preload = 0
+        option['start'] -= n_preload * int(option['period']) * 60
+
+        ticks = yield self.db.runInteraction(self._fetch, option)
+        chart = create_chart(6.4, 3.0)
+        candlestick(chart, ticks[n_preload:])
+        args = dict(color='grey', type='ema', width=0.5, start=n_preload)
+        from chart.trend import swing_zz
+        from chart.trend import moving_average
+
+        swing_zz(chart, ticks, debug=0)
+
+        # moving_average(chart, ticks, n=5, **args)
+        # moving_average(chart, ticks, n=8, **args)
+        # moving_average(chart, ticks, n=13, **args)
+        # moving_average(chart, ticks, n=21, **args)
+        # moving_average(chart, ticks, n=34, **args)
+        # moving_average(chart, ticks, n=55, **args)
+        defer.returnValue(output_chart(chart))
 
     @defer.inlineCallbacks
     def async_GET(self, request):
@@ -98,7 +112,7 @@ class KChartService(BaseResource):
         option = dict()
         option['start'] = request.args.get('start', ['-8h'])[0]
         option['end'] = request.args.get('end', ['now'])[0]
-        option['period'] = request.args.get('peroid', ['1'])[0]
+        option['period'] = request.args.get('period', ['1'])[0]
         option['symbol'] = request.args.get('symbol', ['eurusd'])[0]
 
         matched = TIME_RE.match(option['start'])
@@ -111,9 +125,8 @@ class KChartService(BaseResource):
         if not matched:
             raise InvalidChartData('end time is invalid')
         else:
-            option['end'] = to_timestamp(matched)
+            option['end'] = to_timestamp(matched, option['start'])
 
-        ticks = yield self.db.runInteraction(self._fetch, option)
-        result = yield deferToThread(self._draw, ticks)
+        result = yield self._draw(option)
         request.setHeader('Content-Type', 'image/png')
         defer.returnValue(result)

@@ -18,7 +18,7 @@ from matplotlib.ticker import AutoMinorLocator
 
 
 def create_chart(width, height):
-    fig = plt.figure(figsize=(width, height), dpi=96)
+    fig = plt.figure(figsize=(width, height))
     ax = fig.add_axes([0.02, 0.2, 0.8, 0.75], frame_on=False)
     ax.get_frame().set_linewidth(5)
     ax.xaxis.set_ticks_position('bottom')
@@ -55,7 +55,7 @@ def output_chart(chart):
                         linestyle=':', linewidth=0.5)
 
     output = StringIO()
-    plt.savefig(output, format='png')
+    plt.savefig(output, format='png', dpi=300)
 
     return output.getvalue()
 
@@ -102,8 +102,8 @@ def candlestick(chart, quotes, colorup='#00ff00', colordown='#ff0000'):
             width=width,
             height=height,
             facecolor=color,
-            edgecolor='#666666',
-            lw=1,
+            edgecolor='#333333',
+            lw=0.5,
             zorder=10,
             antialiased=True,
         )
