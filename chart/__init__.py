@@ -11,10 +11,12 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.dates import DateFormatter
+from matplotlib.dates import date2num
+from datetime import datetime
 from cStringIO import StringIO
 import matplotlib.pyplot as plt
 
-from matplotlib.ticker import AutoMinorLocator
+
 
 
 def create_chart(width, height):
@@ -23,19 +25,23 @@ def create_chart(width, height):
     ax.get_frame().set_linewidth(5)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('right')
-    ax.tick_params(direction='out', width=0.5, length=5, pad=4,
-                   labelsize=7)
+    ax.tick_params(direction='out', width=0.5, length=2, pad=4,
+                   labelsize=2.5)
     ax.yaxis.set_major_formatter(FormatStrFormatter('%2.5f'))
-    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d %H:%M'))
+    ax.xaxis.set_major_formatter(DateFormatter('%b %d %H:%M'))
 
-    fig.autofmt_xdate()
+    #    fig.autofmt_xdate()
 
     return (fig, ax)
 
 
-def output_chart(chart):
+def output_chart(chart, option):
     fig, ax = chart[:2]
-    ax.autoscale_view()
+    #ax.autoscale_view()
+
+    xmin = date2num(datetime.fromtimestamp(option['view_start']))
+    xmax = date2num(datetime.fromtimestamp(option['view_end']))
+    ax.get_xaxis().set_view_interval(xmin, xmax, ignore=True)
 
     xmin, xmax = ax.get_xaxis().get_view_interval()
     ymin, ymax = ax.get_yaxis().get_view_interval()
@@ -47,12 +53,17 @@ def output_chart(chart):
     ax.add_artist(Line2D((xmin, xmax), (ymax, ymax), **args))
     ax.add_artist(Line2D((xmin, xmin), (ymin, ymax), **args))
 
-    ax.get_xaxis().set_minor_locator(AutoMinorLocator())
+    from matplotlib.dates import MinuteLocator
+
+    locator = MinuteLocator(interval=int((option['view_end'] - option['view_start']) / 60 / 14))
+    ax.get_xaxis().set_major_locator(locator)
+    locator = MinuteLocator(interval=int((option['view_end'] - option['view_start']) / 60 / 14 / 2))
+    ax.get_xaxis().set_minor_locator(locator)
 
     ax.get_xaxis().grid(which='both', color='#999999',
-                        linestyle=':', linewidth=0.5)
+                        linestyle=':', lw=0.3)
     ax.get_yaxis().grid(which='both', color='#999999',
-                        linestyle=':', linewidth=0.5)
+                        linestyle=':', lw=0.3)
 
     output = StringIO()
     plt.savefig(output, format='png', dpi=300)

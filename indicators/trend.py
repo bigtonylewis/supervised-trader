@@ -29,7 +29,7 @@ def moving_average(x, n, type='simple'):
     return a
 
 
-def swing_zz(ticks, start=0, span=6, backtrace=3):
+def swing_zz(ticks, start=0, span=6, backtrace=3, debug=0):
 
     lows, highs, zigzags = list(), list(), list()
     last_low, last_high = None, None
@@ -59,8 +59,11 @@ def swing_zz(ticks, start=0, span=6, backtrace=3):
 
         highs.append(val)
 
+
+    if debug > 1:
+        _lows, _highs = list(lows), list(highs)
+
     # cut & merge
-    _lows, _highs = list(lows), list(highs)
     lows.reverse()
     highs.reverse()
     while lows and highs:
@@ -99,7 +102,10 @@ def swing_zz(ticks, start=0, span=6, backtrace=3):
         else:
             zigzags.append((1, high[0], high[1][0], high[1][3]))
 
-    return (_lows, _highs, zigzags)
+    if debug > 1:
+        return (zigzags, _lows, _highs)
+    else:
+        return (zigzags,)
 
 
 def swing_points(ticks, start=0):

@@ -86,25 +86,35 @@ class KChartService(BaseResource):
     def _draw(self, option):
 
         # get more data
-        n_preload = 0
-        option['start'] -= n_preload * int(option['period']) * 60
-
+        preload = 89
+        unit = int(option['period']) * 60
+        option['view_start'] = option['start']
+        option['view_end'] = option['end'] + 3 * unit
+        option['start'] -= preload * unit
+        print option
         ticks = yield self.db.runInteraction(self._fetch, option)
         chart = create_chart(6.4, 3.0)
-        candlestick(chart, ticks[n_preload:])
-        args = dict(color='grey', type='ema', width=0.5, start=n_preload)
+        candlestick(chart, ticks)
+
         from chart.trend import swing_zz
         from chart.trend import moving_average
 
-        swing_zz(chart, ticks, debug=0)
+        if int(option['period']) == 1:
+            args = dict(span=12, backtrace=24)
+        elif int(option['period']) == 5:
+            args = dict(span=12, backtrace=24)
+        elif int(option['period']) == 60:
+            args = dict(span=12, backtrace=24)
+        swing_zz(chart, ticks, **args)
 
-        # moving_average(chart, ticks, n=5, **args)
-        # moving_average(chart, ticks, n=8, **args)
-        # moving_average(chart, ticks, n=13, **args)
-        # moving_average(chart, ticks, n=21, **args)
-        # moving_average(chart, ticks, n=34, **args)
-        # moving_average(chart, ticks, n=55, **args)
-        defer.returnValue(output_chart(chart))
+        args = dict(color='#cccccc', type='ema', width=0.5)
+        moving_average(chart, ticks, n=5, **args)
+        moving_average(chart, ticks, n=8, **args)
+        moving_average(chart, ticks, n=13, **args)
+        moving_average(chart, ticks, n=21, **args)
+        moving_average(chart, ticks, n=34, **args)
+        moving_average(chart, ticks, n=55, **args)
+        defer.returnValue(output_chart(chart, option))
 
     @defer.inlineCallbacks
     def async_GET(self, request):
