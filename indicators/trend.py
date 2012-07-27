@@ -29,7 +29,7 @@ def moving_average(x, n, type='simple'):
     return a
 
 
-def swing_zz(ticks, start=0, span=6, backtrace=3, debug=0):
+def swing_zz(ticks, span=6, backtrace=3, debug=0):
 
     lows, highs, zigzags = list(), list(), list()
     last_low, last_high = None, None

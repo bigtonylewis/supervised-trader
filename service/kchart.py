@@ -91,7 +91,6 @@ class KChartService(BaseResource):
         option['view_start'] = option['start']
         option['view_end'] = option['end'] + 3 * unit
         option['start'] -= preload * unit
-        print option
         ticks = yield self.db.runInteraction(self._fetch, option)
         chart = create_chart(6.4, 3.0)
         candlestick(chart, ticks)
@@ -105,6 +104,7 @@ class KChartService(BaseResource):
             args = dict(span=12, backtrace=24)
         elif int(option['period']) == 60:
             args = dict(span=12, backtrace=24)
+
         swing_zz(chart, ticks, **args)
 
         args = dict(color='#cccccc', type='ema', width=0.5)
@@ -114,6 +114,17 @@ class KChartService(BaseResource):
         moving_average(chart, ticks, n=21, **args)
         moving_average(chart, ticks, n=34, **args)
         moving_average(chart, ticks, n=55, **args)
+
+        from spectators import gartley
+        for shift in xrange(preload + 1, len(ticks)):
+            result = gartley.ab_eq_cd(ticks[shift:])
+            if result:
+                fig, ax = chart
+                xs = map(lambda x: x[2], filter(lambda x: x, result))
+                ys = map(lambda x: x[3], filter(lambda x: x, result))
+                ax.plot(xs, ys, color='r', lw=1)
+                break
+
         defer.returnValue(output_chart(chart, option))
 
     @defer.inlineCallbacks
